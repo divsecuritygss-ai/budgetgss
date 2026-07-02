@@ -1,0 +1,22 @@
+{
+  "name": "Budget Control GSS",
+  "short_name": "Budget GSS",
+  "description": "Executive Dashboard Budget Control GSS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2953/2953423.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2953/2953423.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
