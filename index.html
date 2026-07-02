@@ -1,0 +1,3095 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Control App</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* Navigation & Brand */
+            --primary-navy: #0f172a;
+            --accent-emerald: #10b981;
+            --accent-gold: #f59e0b;
+            --sidebar-width: 280px;
+
+            /* Background */
+            --bg-glass: rgba(255, 255, 255, 0.7);
+            --border-glass: rgba(255, 255, 255, 0.3);
+            --bg-main: #f1f5f9;
+            --card-bg: #ffffff;
+
+            /* Text */
+            --text-dark: #1e293b;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+
+            /* Green Palette */
+            --primary-green: #059669;
+            --dark-green: #065f46;
+            --accent-green: #34d399;
+            --light-green: #d1fae5;
+
+            /* Border */
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(5, 150, 105, 0.3);
+            border-radius: 20px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(5, 150, 105, 0.6);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        .brand,
+        .stat-value,
+        .currency {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Loader */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Outfit', sans-serif;
+            color: var(--primary-navy);
+            transition: opacity 0.5s;
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-8px); }
+        }
+
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+            border-color: #dc2626 !important;
+            box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1) !important;
+        }
+
+        .spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid var(--accent-emerald);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--primary-navy);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            padding: 2.5rem 1.8rem;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .brand {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 3.5rem;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            color: #fff;
+            letter-spacing: -1px;
+        }
+
+        .brand i {
+            color: var(--accent-emerald);
+            font-size: 2rem;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .nav-item {
+            padding: 1.1rem 1.4rem;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+            transform: translateX(8px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            color: white;
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 3rem 4rem;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3.5rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-navy);
+            letter-spacing: -1px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            padding: 10px 24px;
+            border-radius: 40px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+            color: var(--primary-navy);
+            border: 1px solid rgba(0, 0, 0, 0.02);
+        }
+
+        .user-profile i {
+            color: var(--accent-emerald);
+            font-size: 1.4rem;
+        }
+
+        /* Views */
+        .view-container {
+            display: none;
+            animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .view-container.active {
+            display: block;
+        }
+
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* DASHBOARD CARDS - FIXED ALIGNMENT */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            padding: 1.8rem;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-glass);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 180px;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+            border-color: var(--accent-emerald);
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-icon.budget {
+            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+            color: #0284c7;
+        }
+
+        .stat-icon.realisasi {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #dc2626;
+        }
+
+        .stat-icon.sisa {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #059669;
+        }
+
+        .stat-icon.tbk {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #d97706;
+        }
+
+        .stat-icon.invoice {
+            background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+            color: #4f46e5;
+        }
+
+        .stat-title {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+            line-height: 1.3;
+            padding-right: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary-navy);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+            margin: 1rem 0;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        /* Chart/Progress Section */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.8rem;
+        }
+
+        .chart-section {
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+            transition: all 0.4s ease;
+            border: 1px solid transparent;
+        }
+
+        .chart-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
+            border-color: rgba(5, 150, 105, 0.1);
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            margin-bottom: 2rem;
+            color: var(--dark-green);
+            font-weight: 600;
+        }
+
+        .progress-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.6rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .progress-bar-bg {
+            height: 10px;
+            background-color: #f1f5f9;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--primary-green));
+            border-radius: 10px;
+            width: 0%;
+            transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .progress-bar-fill.warning {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+        }
+
+        .progress-bar-fill.danger {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+        }
+
+        /* FORM INPUT */
+        .form-card {
+            background-color: var(--card-bg);
+            padding: 3rem;
+            border-radius: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+            max-width: 800px;
+            margin: 0 auto;
+            transition: all 0.4s ease;
+            border: 1px solid transparent;
+        }
+
+        .form-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
+            border-color: rgba(5, 150, 105, 0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.6rem;
+            font-weight: 500;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background-color: #f8fafc;
+            color: var(--text-main);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 4px var(--light-green);
+            background-color: white;
+        }
+
+        .form-control[readonly] {
+            background-color: #e5e7eb;
+            color: #4b5563;
+            border-style: dashed;
+            cursor: not-allowed;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-prefix {
+            position: absolute;
+            left: 18px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .input-group .form-control {
+            padding-left: 45px;
+        }
+
+        .btn-submit {
+            background-color: var(--primary-green);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--dark-green);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(5, 150, 105, 0.3);
+        }
+
+        /* TABLE */
+        .table-card {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+            overflow-x: auto;
+            transition: all 0.4s ease;
+            border: 1px solid transparent;
+        }
+
+        .table-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
+            border-color: rgba(5, 150, 105, 0.1);
+        }
+
+        .table-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .data-table th {
+            background-color: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-align: left;
+            padding: 1.2rem 1rem;
+            border-bottom: 2px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 1.2rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+            vertical-align: middle;
+            transition: background-color 0.2s ease;
+        }
+
+        .data-table tr:hover td {
+            background-color: #f1f5f9;
+            cursor: default;
+        }
+
+        .badge {
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge.warning {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+
+        .badge.success {
+            background-color: var(--light-green);
+            color: var(--primary-green);
+        }
+
+        .badge.danger {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+
+        .badge.dark-danger {
+            background-color: #991b1b;
+            color: #fecaca;
+            animation: pulse 1.5s infinite;
+        }
+
+        .badge.info {
+            background-color: #e0f2fe;
+            color: #0284c7;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .text-right {
+            text-align: right !important;
+        }
+
+        .currency {
+            font-weight: 600;
+        }
+
+        .text-danger {
+            color: #dc2626;
+        }
+
+        /* Notification Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            color: var(--dark-green);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+            border-left: 4px solid var(--primary-green);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast i {
+            color: var(--primary-green);
+            font-size: 1.2rem;
+        }
+
+        /* Modal / Pop-up CSS */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: var(--dark-green);
+        }
+
+        .modal-header {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            color: var(--dark-green);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .invoice-summary {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .invoice-summary p {
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+
+        /* Mini Progress Bar in Table */
+        .pay-progress-bg {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .pay-progress-fill {
+            height: 100%;
+            background: var(--primary-green);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        /* Contractor Summary Card */
+        .contractor-summary {
+            background: linear-gradient(135deg, var(--dark-green), var(--primary-green));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 25px rgba(5, 150, 105, 0.15);
+        }
+
+        .contractor-summary .sum-item {
+            text-align: center;
+        }
+
+        .contractor-summary .sum-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .contractor-summary .sum-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: 'Outfit';
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- LOADER SCREEN -->
+    <div id="loader">
+        <div class="spinner"></div>
+        <h2>Menghubungkan ke Master Data...</h2>
+        <p style="color: var(--text-muted); font-family: 'Inter', sans-serif; margin-top: 10px; font-size: 0.9rem;">
+            Mensinkronisasi Budget & Realisasi secara Real-Time</p>
+    </div>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <nav class="sidebar">
+        <div class="brand">
+            <i class="fas fa-wallet"></i> BUDGET GSS
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active" onclick="switchTab('dashboard', this)">
+                <i class="fas fa-chart-pie"></i> Dashboard
+            </li>
+            <li class="nav-item" onclick="switchTab('laporan', this)">
+                <i class="fas fa-table-list"></i> Laporan Budget
+            </li>
+            <li class="nav-item" onclick="switchTab('invoice-input', this)">
+                <i class="fas fa-file-invoice"></i> Input Pembayaran
+            </li>
+            <li class="nav-item" onclick="switchTab('invoice-track', this)">
+                <i class="fas fa-chart-bar"></i> Monitoring Invoice
+            </li>
+            <li class="nav-item" onclick="switchTab('payment-history', this)">
+                <i class="fas fa-receipt"></i> History Pembayaran
+            </li>
+        </ul>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <header class="header">
+            <h1 id="page-title">Dashboard</h1>
+        </header>
+
+        <!-- 1. DASHBOARD VIEW -->
+        <div id="view-dashboard" class="view-container active">
+            
+            <!-- BANNER DASHBOARD -->
+            <div style="background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-green) 100%); border-radius: 24px; padding: 2.5rem 3rem; color: white; margin-bottom: 2.5rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 15px 30px rgba(5, 150, 105, 0.2); position: relative; overflow: hidden;">
+                <div style="position: relative; z-index: 2;">
+                    <h2 style="font-size: 2.2rem; font-family: 'Outfit', sans-serif; margin-bottom: 0.5rem; font-weight: 700;">Selamat Datang di BUDGET GSS! 👋</h2>
+                    <p style="opacity: 0.9; font-size: 1.05rem; max-width: 600px; line-height: 1.6;">Pantau, kelola, dan kontrol anggaran operasional Anda dengan lebih mudah dan akurat dalam satu dashboard terpusat.</p>
+                </div>
+                <div style="font-size: 8rem; opacity: 0.1; position: absolute; right: 2rem; top: -2rem; transform: rotate(-15deg);">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+            </div>
+
+            <!-- 4 Summary Cards (termasuk Tbk) -->
+            <div class="summary-grid">
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-title">Total Anggaran (Budget)</div>
+                        <div class="stat-icon budget"><i class="fas fa-wallet"></i></div>
+                    </div>
+                    <div class="stat-value currency" id="dash-total-budget">Rp 0</div>
+                    <div class="stat-subtitle"><i class="fas fa-calendar-alt"></i> Tahun Anggaran</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-title">Total Realisasi (Non-Tbk)</div>
+                        <div class="stat-icon realisasi"><i class="fas fa-receipt"></i></div>
+                    </div>
+                    <div class="stat-value currency" id="dash-total-realisasi">Rp 0</div>
+                    <div class="stat-subtitle" id="dash-realisasi-pct"><i class="fas fa-arrow-up"></i> 0% Terpakai</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-title">Sisa Anggaran</div>
+                        <div class="stat-icon sisa"><i class="fas fa-piggy-bank"></i></div>
+                    </div>
+                    <div class="stat-value currency" style="color: var(--accent-emerald);" id="dash-sisa-budget">Rp 0
+                    </div>
+                    <div class="stat-subtitle" id="dash-sisa-pct"><i class="fas fa-shield-alt"></i> 100% Sisa</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-title">Penggunaan Tbk (CoA 0)</div>
+                        <div class="stat-icon tbk"><i class="fas fa-building"></i></div>
+                    </div>
+                    <div class="stat-value currency" style="color: var(--accent-gold);" id="dash-total-tbk">Rp 0</div>
+                    <div class="stat-subtitle"><i class="fas fa-info-circle"></i> Realisasi Khusus</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-title">Outstanding Invoice</div>
+                        <div class="stat-icon invoice"><i class="fas fa-file-invoice"></i></div>
+                    </div>
+                    <div class="stat-value currency" style="color: #4f46e5;" id="dash-total-outstanding">Rp 0</div>
+                    <div class="stat-subtitle" id="dash-outstanding-count"><i class="fas fa-clock"></i> 0 Tagihan</div>
+                </div>
+            </div>
+
+            <!-- CHARTS SECTION -->
+            <div class="content-grid" style="grid-template-columns: 2fr 1fr; margin-bottom: 2.5rem;">
+                <div class="chart-section">
+                    <h2 class="section-title">Tren Pengeluaran Bulanan</h2>
+                    <div style="position: relative; height: 320px; width: 100%;">
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-section">
+                    <h2 class="section-title">Distribusi Pengeluaran</h2>
+                    <div style="position: relative; height: 320px; width: 100%;">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="chart-section" style="padding: 1.5rem 2.5rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 class="section-title" style="margin-bottom: 0;">Rekap Outstanding per Kontraktor</h2>
+                        <button onclick="switchTab('invoice-track', document.querySelectorAll('.nav-item')[3])"
+                            style="background: none; border: none; color: var(--primary-green); font-weight: 600; cursor: pointer;">Lihat
+                            Detail <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                    <div id="dashboard-vendor-cards" class="vendor-grid">
+                        <!-- Data Card Kontraktor diisi oleh JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. LAPORAN BUDGET VIEW -->
+        <div id="view-laporan" class="view-container" style="display:none;">
+            <!-- BAR CHART Laporan -->
+            <div class="chart-section" style="margin-bottom: 2rem;">
+                <h2 class="section-title">Persentase Pemakaian Budget per Narasi</h2>
+                <div style="position: relative; height: 750px; width: 100%;">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-actions">
+                    <h2 class="section-title" style="margin-bottom: 0;">Detail Rincian Sisa Budget (Live)</h2>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Narasi (Naration)</th>
+                            <th>No. Akun (CoA)</th>
+                            <th class="text-right">Budget Awal</th>
+                            <th class="text-right">Realisasi</th>
+                            <th class="text-right">Sisa Budget</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Data Dinamis -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 4. INPUT PEMBAYARAN VIEW -->
+        <div id="view-invoice-input" class="view-container" style="display:none;">
+            <div class="form-card" style="margin-bottom: 2rem; margin-top: 2rem;">
+                <h2 class="section-title" style="margin-bottom: 2rem;">Input Invoice Baru</h2>
+                <form id="invoiceForm" onsubmit="submitInvoice(event)">
+                    <div class="form-grid">
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Pekerjaan (Work Title)</label>
+                            <select class="form-control" required id="invCoA" onchange="updateInvNaration()">
+                                <option value="" disabled selected>Sedang memuat data master...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group full-width" style="margin-top: -0.5rem;">
+                            <label class="form-label">Narasi Budget (Otomatis)</label>
+                            <input type="text" class="form-control" id="invNaration" readonly
+                                placeholder="Pilih Pekerjaan terlebih dahulu..."
+                                title="Narasi otomatis dari Master SubWork">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Receive Date</label>
+                            <input type="date" class="form-control" id="invReceiveDate" onchange="autoSetTargetDate()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Invoice Date</label>
+                            <input type="date" class="form-control" required id="invDate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tanggal Submit (ke Finance)</label>
+                            <input type="date" class="form-control" id="invTanggalSubmit"
+                                onchange="autoSetTargetDate()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Target Date (Jatuh Tempo)</label>
+                            <input type="date" class="form-control" required id="invTarget"
+                                title="Otomatis dihitung berdasarkan Pekerjaan & Tanggal Submit (ke Finance)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Status Pajak</label>
+                            <div style="display: flex; gap: 20px; margin-top: 8px;">
+                                <label
+                                    style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                                    <input type="radio" name="invVat" value="VAT" checked onchange="handleVatChange()">
+                                    VAT
+                                </label>
+                                <label
+                                    style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                                    <input type="radio" name="invVat" value="NON_VAT" onchange="handleVatChange()"> NON
+                                    VAT
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Bentuk Pembayaran</label>
+                            <select class="form-control" id="invPayType" onchange="updateFinanceCP()" required>
+                                <option value="Invoice Direct">Invoice Direct</option>
+                                <option value="Payment Request">Payment Request</option>
+                                <option value="Petty Cash">Petty Cash</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">No. Invoice</label>
+                            <input type="text" class="form-control" required id="invNoInvoice"
+                                placeholder="Ketik '-' jika tidak ada no. invoice">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nama Kontraktor / Vendor</label>
+                            <input type="text" class="form-control" required id="invKontraktor"
+                                placeholder="PT Contoh Nama Vendor">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">PIC Internal</label>
+                            <input type="text" class="form-control" required id="invPIC" placeholder="Nama PIC">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Business Unit</label>
+                            <select class="form-control" id="invDivisi" onchange="updateFinanceCP()" required>
+                                <option value="" disabled selected>Pilih Unit Bisnis...</option>
+                                <option value="EMP Tbk">EMP Tbk</option>
+                                <option value="EMP Bentu">EMP Bentu</option>
+                                <option value="EMP Korinci Baru">EMP Korinci Baru</option>
+                                <option value="EMP Energi Gandewa">EMP Energi Gandewa</option>
+                                <option value="EMP Energi Riau">EMP Energi Riau</option>
+                                <option value="EMP Tunas Energi">EMP Tunas Energi</option>
+                                <option value="EMP Tonga">EMP Tonga</option>
+                                <option value="EMP Gebang">EMP Gebang</option>
+                                <option value="ITA">ITA</option>
+                                <option value="PGE">PGE</option>
+                                <option value="Aceh Energy">Aceh Energy</option>
+                                <option value="Buzi">Buzi</option>
+                                <option value="Sengkang">Sengkang</option>
+                                <option value="Kangean">Kangean</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">CP Accounting / AP</label>
+                            <select class="form-control" id="invCPAcct" required style="font-weight: 600;">
+                                <option value="-">-</option>
+                                <option value="Munib">Munib</option>
+                                <option value="Deviana">Deviana</option>
+                                <option value="Novanto">Novanto</option>
+                                <option value="Getty">Getty</option>
+                                <option value="Golang/Novanto">Golang/Novanto</option>
+                                <option value="Amanda">Amanda</option>
+                                <option value="Hana S">Hana S</option>
+                                <option value="Ildzam">Ildzam</option>
+                                <option value="Safa">Safa</option>
+                                <option value="Ihsan">Ihsan</option>
+                                <option value="Intan">Intan</option>
+                                <option value="Yassir">Yassir</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">CP Treasury</label>
+                            <select class="form-control" id="invCPTreasury" required style="font-weight: 600;">
+                                <option value="-">-</option>
+                                <option value="Herliana">Herliana</option>
+                                <option value="Achi">Achi</option>
+                                <option value="Ayyub">Ayyub</option>
+                                <option value="Indah">Indah</option>
+                                <option value="Hady Dwi">Hady Dwi</option>
+                                <option value="Dzarrin">Dzarrin</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Nominal Tagihan</label>
+                            <div class="input-group">
+                                <span class="input-prefix">Rp</span>
+                                <input type="text" class="form-control" placeholder="Contoh: 15.000.000" id="invNominal"
+                                    onkeyup="formatRupiah(this)" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Catatan / Deskripsi Pembayaran</label>
+                            <textarea class="form-control" id="invCatatan" placeholder="Contoh: Pembayaran termin 1, Invoice untuk vendor X, dll..."></textarea>
+                        </div>
+
+                    </div><!-- /form-grid -->
+
+                    <button type="submit" class="btn-submit" id="btnSubmitInv">
+                        <i class="fas fa-save"></i> Simpan Data Invoice
+                    </button>
+                </form>
+            </div><!-- /form-card -->
+        </div><!-- /view-invoice-input -->
+
+        <!-- 5. MONITORING INVOICE VIEW -->
+        <div id="view-invoice-track" class="view-container" style="display:none;">
+            <!-- LOCK SCREEN TRACKING -->
+            <div id="lock-screen-track" class="form-card"
+                style="text-align: center; max-width: 450px; padding: 4rem 2rem; margin-top: 2rem; margin-bottom: 2rem; margin-left: auto; margin-right: auto;">
+                <div style="font-size: 3.5rem; color: var(--primary-green); margin-bottom: 1rem;">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h2 style="font-family: 'Outfit', sans-serif; color: var(--dark-green); margin-bottom: 0.5rem;">
+                    Otorisasi Diperlukan</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem;">Masukkan PIN Admin
+                    Keuangan untuk membuka akses Monitoring Invoice.</p>
+
+                <div class="form-group" style="margin-bottom: 1.5rem; text-align: left;">
+                    <div class="input-group">
+                        <span class="input-prefix"><i class="fas fa-key"></i></span>
+                        <input type="password" id="pinInputTrack" class="form-control" placeholder="Masukkan PIN..."
+                            style="text-align: center; letter-spacing: 5px; font-size: 1.2rem;"
+                            onkeypress="if(event.key === 'Enter') verifyPin('track')">
+                    </div>
+                </div>
+
+                <button type="button" id="btnPinTrack" class="btn-submit" onclick="verifyPin('track')">
+                    <i class="fas fa-unlock-keyhole"></i> Buka Kunci Akses
+                </button>
+            </div>
+
+            <div id="content-track" style="display: none;">
+                <div class="table-card">
+                    <div
+                        style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+                        <div style="flex: 1; min-width: 240px;">
+                            <label class="form-label">Cari Berdasarkan Nama Kontraktor</label>
+                            <div class="input-group">
+                                <span class="input-prefix"><i class="fas fa-search"></i></span>
+                                <input type="text" id="search-kontraktor" class="form-control"
+                                    placeholder="Ketik nama kontraktor..." onkeyup="filterByContractor()">
+                            </div>
+                        </div>
+                        <div id="pic-track-wrap">
+                            <label class="form-label"><i class="fas fa-user-tie"
+                                    style="margin-right:5px; color:var(--primary-green);"></i>Filter PIC</label>
+                            <select id="filter-pic-track" class="form-control" onchange="filterByContractor()"
+                                style="min-width: 180px; padding: 10px 18px;">
+                                <option value="">— Semua PIC —</option>
+                            </select>
+                        </div>
+                        <div id="worktitle-track-wrap" style="flex: 1; min-width: 200px;">
+                            <label class="form-label"><i class="fas fa-project-diagram" style="margin-right:5px; color:var(--primary-green);"></i>Filter Work Title</label>
+                            <select id="filter-worktitle-track" class="form-control" onchange="filterByContractor()" style="width: 100%; padding: 10px 18px;">
+                                <option value="">— Semua Work Title —</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="summary-kontraktor" class="contractor-summary" style="display: none;">
+                        <div class="sum-item">
+                            <div class="sum-label">Total Tagihan</div>
+                            <div class="sum-value" id="sum-total">Rp 0</div>
+                        </div>
+                        <div class="sum-item"
+                            style="border-left: 1px solid rgba(255,255,255,0.2); border-right: 1px solid rgba(255,255,255,0.2); padding: 0 2rem;">
+                            <div class="sum-label">Sudah Dibayar</div>
+                            <div class="sum-value" id="sum-dibayar">Rp 0</div>
+                        </div>
+                        <div class="sum-item">
+                            <div class="sum-label">Sisa Outstanding</div>
+                            <div class="sum-value" id="sum-sisa" style="color: #fcd34d;">Rp 0</div>
+                        </div>
+                    </div>
+
+                    <div class="table-actions">
+                        <h2 class="section-title" style="margin-bottom: 0;">Monitoring Pembayaran (Smart Due Date)</h2>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Kontraktor & No. Invoice</th>
+                                <th>PIC & Divisi</th>
+                                <th>Target Date</th>
+                                <th class="text-right">Nominal & Saldo</th>
+                                <th>Status Monitor</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-invoice">
+                            <!-- Data Dinamis -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div><!-- /view-invoice-track -->
+
+        <!-- 6. RIWAYAT LUNAS VIEW -->
+        <div id="view-payment-history" class="view-container" style="display:none;">
+            <!-- LOCK SCREEN HISTORY -->
+            <div id="lock-screen-history" class="form-card"
+                style="text-align: center; max-width: 450px; padding: 4rem 2rem; margin-top: 2rem; margin-bottom: 2rem; margin-left: auto; margin-right: auto;">
+                <div style="font-size: 3.5rem; color: var(--primary-green); margin-bottom: 1rem;">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h2 style="font-family: 'Outfit', sans-serif; color: var(--dark-green); margin-bottom: 0.5rem;">
+                    Otorisasi Diperlukan</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem;">Masukkan PIN Admin
+                    Keuangan untuk membuka akses Riwayat Pembayaran Lunas.</p>
+                <div class="form-group" style="margin-bottom: 1.5rem; text-align: left;">
+                    <div class="input-group">
+                        <span class="input-prefix"><i class="fas fa-key"></i></span>
+                        <input type="password" id="pinInputHistory" class="form-control" placeholder="Masukkan PIN..."
+                            style="text-align: center; letter-spacing: 5px; font-size: 1.2rem;"
+                            onkeypress="if(event.key === 'Enter') verifyPin('history')">
+                    </div>
+                </div>
+                <button type="button" id="btnPinHistory" class="btn-submit" onclick="verifyPin('history')">
+                    <i class="fas fa-unlock-keyhole"></i> Buka Kunci Akses
+                </button>
+            </div>
+
+            <!-- KONTEN RIWAYAT LUNAS -->
+            <div id="content-history" style="display: none;">
+                <div class="table-card">
+                    <!-- Header + Filter dalam satu area tapi layout 2 baris -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <!-- Baris 1: Judul -->
+                        <div style="margin-bottom: 1rem;">
+                            <h2 class="section-title" style="margin-bottom: 0.25rem;">History Pembayaran</h2>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">Menampilkan invoice
+                                <strong>Lunas</strong> dan <strong>Dibayar Sebagian</strong>. Klik <i
+                                    class="fas fa-history"></i> untuk riwayat cicilan.
+                            </p>
+                        </div>
+                        <!-- Baris 2: Filter -->
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+                            <div id="pic-history-wrap">
+                                <label class="form-label" style="font-size:0.85rem;"><i class="fas fa-user-tie"
+                                        style="margin-right:5px; color:var(--primary-green);"></i>Filter PIC</label>
+                                <select id="filter-pic-history" class="form-control" onchange="filterHistoryTable()"
+                                    style="min-width: 180px; padding: 10px 18px;">
+                                    <option value="">— Semua PIC —</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1; min-width: 220px;">
+                                <label class="form-label" style="font-size:0.85rem;"><i class="fas fa-search"
+                                        style="margin-right:5px; color:var(--primary-green);"></i>Cari Kontraktor / No.
+                                    Invoice</label>
+                                <div class="input-group">
+                                    <span class="input-prefix"><i class="fas fa-search"></i></span>
+                                    <input type="text" id="search-history" class="form-control"
+                                        placeholder="Ketik nama kontraktor atau no. invoice..."
+                                        onkeyup="filterHistoryTable()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Summary Cards -->
+                    <div id="history-summary"
+                        style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div
+                            style="background: linear-gradient(135deg, #059669, #065f46); color: white; padding: 1.25rem; border-radius: 16px; text-align: center;">
+                            <div style="font-size: 0.8rem; opacity: 0.85; margin-bottom: 4px;">Invoice Ada Pembayaran
+                            </div>
+                            <div id="hist-count" style="font-size: 1.6rem; font-weight: 700; font-family: 'Outfit';">0
+                            </div>
+                        </div>
+                        <div
+                            style="background: linear-gradient(135deg, #0284c7, #075985); color: white; padding: 1.25rem; border-radius: 16px; text-align: center;">
+                            <div style="font-size: 0.8rem; opacity: 0.85; margin-bottom: 4px;">Total Nilai Terbayar
+                            </div>
+                            <div id="hist-total" style="font-size: 1.3rem; font-weight: 700; font-family: 'Outfit';">Rp
+                                0</div>
+                        </div>
+                        <div
+                            style="background: linear-gradient(135deg, #7c3aed, #5b21b6); color: white; padding: 1.25rem; border-radius: 16px; text-align: center;">
+                            <div style="font-size: 0.8rem; opacity: 0.85; margin-bottom: 4px;">Invoice Cicilan</div>
+                            <div id="hist-cicilan" style="font-size: 1.6rem; font-weight: 700; font-family: 'Outfit';">0
+                            </div>
+                        </div>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Kontraktor & No. Invoice</th>
+                                <th>Divisi & PIC</th>
+                                <th>Tanggal Submit</th>
+                                <th class="text-right">Nilai Invoice</th>
+                                <th>Status</th>
+                                <th>Riwayat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-history">
+                            <!-- Data Dinamis -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div><!-- /view-payment-history -->
+
+        <!-- MODAL RIWAYAT CICILAN -->
+        <div id="modal-payment-log" class="modal-overlay">
+            <div class="modal-content" style="max-width: 900px; width: 95%;">
+                <button class="modal-close" onclick="closePaymentLogModal()"><i class="fas fa-times"></i></button>
+                <h3 class="modal-header"><i class="fas fa-history"
+                        style="color: var(--primary-green); margin-right: 8px;"></i>Riwayat Cicilan Pembayaran</h3>
+                <div id="modal-log-info"
+                    style="background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; font-size: 0.9rem;">
+                </div>
+                <div id="modal-log-loading" style="text-align:center; padding: 2rem; color: var(--text-muted);">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem;"></i><br>Memuat riwayat...
+                </div>
+                <div id="modal-log-content" style="display:none; overflow-x: auto; width: 100%;">
+                    <table class="data-table" style="font-size: 0.88rem; min-width: 700px;">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Tanggal Bayar</th>
+                                <th class="text-right">Nominal Dibayar</th>
+                                <th class="text-right">Saldo Sesudah</th>
+                                <th>Status</th>
+                                <th>Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-payment-log"></tbody>
+                    </table>
+                </div>
+                <div id="modal-log-empty"
+                    style="display:none; text-align:center; padding: 2rem; color: var(--text-muted);">
+                    <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 0.5rem;"></i><br>
+                    Belum ada riwayat cicilan tercatat untuk invoice ini.
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL UPDATE INVOICE -->
+        <div id="modal-update-invoice" class="modal-overlay">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
+                <h3 class="modal-header">Update Status Invoice</h3>
+
+                <div class="invoice-summary">
+                    <p style="color: var(--text-muted);">Kontraktor
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <strong id="modal-kontraktor"
+                            style="color: var(--text-main);"></strong></p>
+                    <p style="color: var(--text-muted);">No. Invoice &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <strong
+                            id="modal-no-invoice" style="color: var(--text-main);"></strong></p>
+                    <p style="color: var(--text-muted);">Total Tagihan &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <strong
+                            id="modal-nominal" style="color: var(--text-main);"></strong></p>
+                    <p style="color: var(--text-muted);">Sudah Dibayar &nbsp;&nbsp;&nbsp;&nbsp;: <strong
+                            id="modal-terbayar" style="color: #059669;"></strong></p>
+                    <p style="color: var(--text-muted);">Sisa Saldo &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:
+                        <strong id="modal-sisa" style="color: #dc2626;"></strong>
+                    </p>
+                </div>
+
+                <form id="formUpdateInvoice" onsubmit="submitUpdateInvoice(event)">
+                    <input type="hidden" id="modal-inv-id">
+
+                    <div class="form-group">
+                        <label class="form-label">Revisi Target Date (Opsional)</label>
+                        <input type="date" class="form-control" id="modal-target-date">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Input Nominal Pembayaran Baru (Rp)</label>
+                        <div class="input-group" id="nominal-input-group">
+                            <span class="input-prefix">Rp</span>
+                            <input type="text" class="form-control" id="modal-tambah-bayar"
+                                placeholder="Contoh: 5.000.000" onkeyup="formatRupiah(this); validateNominalField();">
+                        </div>
+                        <p id="nominal-hint" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">*Akan
+                            ditambahkan ke total terbayar saat ini.</p>
+                        <p id="nominal-required-msg"
+                            style="font-size: 0.8rem; color: #dc2626; margin-top: 5px; display:none;"><i
+                                class="fas fa-exclamation-circle"></i> Nominal wajib diisi untuk status ini.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Status Pembayaran</label>
+                        <select class="form-control" id="modal-status" required onchange="onStatusChange(this.value)">
+                            <option value="Belum Dibayar">Belum Dibayar</option>
+                            <option value="Dibayar Sebagian">Dibayar Sebagian</option>
+                            <option value="Lunas">Lunas (Selesai)</option>
+                        </select>
+                        <p id="status-nominal-hint"
+                            style="font-size: 0.8rem; color: #d97706; margin-top: 5px; display:none;"><i
+                                class="fas fa-info-circle"></i> <strong>Status ini memerlukan nominal
+                                pembayaran.</strong></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Catatan Koordinasi</label>
+                        <textarea class="form-control" id="modal-catatan"
+                            placeholder="Contoh: Menunggu tanda tangan direktur, atau Revisi faktur pajak..."></textarea>
+                    </div>
+
+                    <button type="button" class="btn-submit" onclick="submitUpdateInvoice(event)" id="btnSubmitUpdate">Update Sekarang</button>
+                </form>
+            </div>
+        </div>
+        </div>
+
+        <!-- MODAL DELETE INVOICE (PROFESSIONAL) -->
+        <div id="modal-delete-invoice" class="modal-overlay">
+            <div class="modal-content" style="max-width: 400px; text-align: center;">
+                <div style="font-size: 3.5rem; color: #dc2626; margin-bottom: 1.5rem;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 style="margin-bottom: 10px; color: var(--dark-green); font-size: 1.4rem;">Konfirmasi Hapus</h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.5;">
+                    Anda akan menghapus data ini secara <strong>permanen</strong>.<br>Silakan masukkan PIN untuk
+                    memverifikasi.
+                </p>
+
+                <input type="password" id="delete-pin" class="form-control" placeholder="****" maxlength="4"
+                    style="text-align: center; font-size: 2rem; letter-spacing: 15px; margin-bottom: 2rem; border-radius: 12px; height: 60px;"
+                    onkeypress="if(event.key === 'Enter') verifyPin('delete')">
+
+                <input type="hidden" id="delete-row-id">
+
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn-submit" onclick="closeDeleteModal()"
+                        style="background: #94a3b8; flex: 1;">Batal</button>
+                    <button id="btnConfirmDelete" class="btn-submit" onclick="processDelete()"
+                        style="background: #dc2626; flex: 1;">Hapus</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle"></i>
+        <span>Data realisasi berhasil disimpan!</span>
+    </div>
+
+    <!-- MODERN ALERT MODAL -->
+    <div id="modal-alert" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; text-align: center; padding: 3rem 2rem; border-radius: 24px; border: 1px solid var(--border-glass);">
+            <div id="alert-icon-container" style="font-size: 4.5rem; margin-bottom: 1.5rem; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                <i id="alert-icon" class="fas fa-check-circle"></i>
+            </div>
+            <h3 id="alert-title" style="font-family: 'Outfit', sans-serif; font-size: 1.6rem; margin-bottom: 0.8rem; color: var(--primary-navy);">Sukses!</h3>
+            <p id="alert-message" style="color: var(--text-muted); font-size: 1rem; line-height: 1.6; margin-bottom: 2rem;"></p>
+            <button onclick="closeAlert()" class="btn-submit" style="margin: 0 auto; width: auto; min-width: 120px; background: var(--primary-navy);">Tutup</button>
+        </div>
+    </div>
+
+    <style>
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* CSS BARU UNTUK VENDOR CARD */
+        .vendor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        .vendor-card { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; transition: all 0.3s ease; }
+        .vendor-card:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: var(--accent-emerald); transform: translateY(-2px); }
+        .vendor-header { font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 600; color: var(--primary-navy); margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: center; }
+        .vendor-stat { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .vendor-stat.sisa { font-weight: 700; color: #dc2626; font-size: 1.05rem; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid #e2e8f0; }
+    </style>
+
+    <!-- SCRIPT UTAMA -->
+    <script>
+        // =========================================================================
+        // JEMBATAN VERCEL TO GAS API PIPELINE (POLYFILL BRIDGE + OFFLINE STORAGE)
+        // =========================================================================
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzwvYLqeqIoZgc6tIXbYfMZO61TN9D-viJZKYf-Tyl-FI949fCWaxP1DDCKQZVAivh7Ug/exec"; 
+
+        // Registrasi Service Worker untuk kapabilitas PWA Offline Shell
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('PWA Service Worker siap berjalan offline!', reg.scope))
+                    .catch(err => console.error('Gagal memuat Service Worker:', err));
+            });
+        } 
+
+        if (typeof google === 'undefined' || !google.script) {
+            window.google = {
+                script: {
+                    run: {
+                        withSuccessHandler: function(cb) { this.success = cb; return this; },
+                        withFailureHandler: function(cb) { this.failure = cb; return this; },
+                        getInitialData: function() {
+                            fetch(`${GAS_API_URL}?action=getInitialData`)
+                                .then(res => res.json())
+                                .then(d => {
+                                    if (d && d.status === "success") {
+                                        // Backup data anggaran terbaru ke memori internal perangkat saat online
+                                        localStorage.setItem("cache_initial_data", JSON.stringify(d));
+                                    }
+                                    this.success(d);
+                                })
+                                .catch(err => {
+                                    console.warn("Koneksi terganggu, mencoba memuat data lokal offline...");
+                                    const localBackup = localStorage.getItem("cache_initial_data");
+                                    if (localBackup) {
+                                        const parsedData = JSON.parse(localBackup);
+                                        // Tampilkan notifikasi kecil bahwa aplikasi berjalan dalam mode offline
+                                        setTimeout(() => {
+                                            showModernAlert("Mode Offline", "Koneksi internet terputus. Menampilkan rekaman data terakhir.", "info");
+                                        }, 1000);
+                                        this.success(parsedData);
+                                    } else {
+                                        this.failure ? this.failure(err) : console.error(err);
+                                    }
+                                });
+                        },
+                        getPaymentLog: function(uid) {
+                            fetch(`${GAS_API_URL}?action=getPaymentLog&noInvoice=${encodeURIComponent(uid)}`)
+                                .then(res => res.json()).then(d => this.success(d))
+                                .catch(err => this.failure ? this.failure(err) : console.error(err));
+                        },
+                        verifyPinOnServer: function(pin) {
+                            fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'verifyPinOnServer', data: { pin: pin } }) })
+                                .then(res => res.json()).then(d => this.success(d.result))
+                                .catch(err => this.failure ? this.failure(err) : console.error(err));
+                        },
+                        simpanData: function(data) {
+                            fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'simpanData', data: data }) })
+                                .then(res => res.json()).then(d => this.success(d.result))
+                                .catch(err => this.failure ? this.failure(err) : console.error(err));
+                        },
+                        simpanInvoice: function(data) {
+                            if (!navigator.onLine) {
+                                return showModernAlert("Gagal Menyimpan", "Perangkat Anda sedang offline. Fitur tulis/mutasi database Sheets memerlukan koneksi internet.", "error");
+                            }
+                            fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'simpanInvoice', data: data }) })
+                                .then(res => res.json()).then(d => this.success(d.result))
+                                .catch(err => this.failure ? this.failure(err) : console.error(err));
+                        },
+                        updateInvoiceDetails: function(data) {
+                            fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateInvoiceDetails', data: data }) })
+                                .then(res => res.json()).then(d => this.success(d.result))
+                                .catch(err => this.failure ? this.failure(err) : console.error(err));
+                        },
+                        deleteInvoice: function(uid, id) {
+                            fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteInvoice', data: { noInvoice: uid, id: id } }) })
+                                .then(res => res.json()).then(d => this.success(d.result))
+                                .catch(err => this.failure ? this.failure(err) : console.error(err));
+                        }
+                    }
+                }
+            };
+        }
+
+        let appData = { budget: [], subwork: [], realisasi: [], invoices: [] };
+
+        // Peta pencarian untuk Narasi berdasarkan Work Title
+        let workTitleToNaration = {};
+
+        // MASTER DATA FINANCE Berdasarkan Business Unit
+        const masterFinance = {
+            "EMP Bentu": { ap: "Munib", accounting: "Deviana", treasury: "Herliana" },
+            "EMP Korinci Baru": { ap: "Munib", accounting: "Deviana", treasury: "Herliana" },
+            "EMP Energi Gandewa": { ap: "Novanto", accounting: "Getty", treasury: "Achi" },
+            "EMP Energi Riau": { ap: "Golang/Novanto", accounting: "Amanda", treasury: "Ayyub" },
+            "EMP Tunas Energi": { ap: "Hana S", accounting: "Getty", treasury: "Achi" },
+            "EMP Tonga": { ap: "Ildzam", accounting: "Amanda", treasury: "Herliana" },
+            "EMP Tbk": { ap: "Hana S", accounting: "Safa", treasury: "Indah" },
+            "ITA": { ap: "Ihsan", accounting: "Intan", treasury: "Hady Dwi" },
+            "Aceh Energy": { ap: "-", accounting: "-", treasury: "-" },
+            "EMP Gebang": { ap: "Ihsan", accounting: "Getty", treasury: "Dzarrin" },
+            "Buzi": { ap: "-", accounting: "-", treasury: "-" },
+            "Sengkang": { ap: "-", accounting: "-", treasury: "-" },
+            "Kangean": { ap: "-", accounting: "-", treasury: "-" },
+            "PGE": { ap: "Yassir", accounting: "Amanda", treasury: "Achi" }
+        };
+
+        function handleVatChange() {
+            const payTypeSelect = document.getElementById('invPayType');
+            // Re‑enable all payment options (just in case)
+            Array.from(payTypeSelect.options).forEach(opt => opt.disabled = false);
+            // Get VAT status, trim and normalize
+            let vatRaw = document.querySelector('input[name="invVat"]:checked').value.trim();
+            const vat = vatRaw === 'NON_VAT' ? 'NON VAT' : vatRaw; // map back to expected string
+            // Store normalized value for other logic if needed
+            window.currentVat = vat;
+            updateFinanceCP();
+        }
+
+        // Ensure correct state on page load
+        window.addEventListener('DOMContentLoaded', handleVatChange);
+
+        function updateFinanceCP() {
+            const bu = document.getElementById('invDivisi').value;
+            const vat = document.querySelector('input[name="invVat"]:checked').value;
+            const payType = document.getElementById('invPayType').value;
+
+            if (!bu || !masterFinance[bu]) return;
+
+            const financeData = masterFinance[bu];
+            let targetCP = financeData.accounting; // Default Accounting
+
+            if (payType === "Invoice Direct") {
+                targetCP = financeData.ap;
+            } else if (payType === "Payment Request") {
+                targetCP = (vat === "VAT") ? financeData.ap : financeData.accounting;
+            } else {
+                targetCP = financeData.accounting;
+            }
+
+            // Set dropdown value (otomatisasi)
+            document.getElementById('invCPAcct').value = targetCP;
+            document.getElementById('invCPTreasury').value = financeData.treasury;
+        }
+
+        window.onload = function () {
+            if (document.getElementById('invReceiveDate')) document.getElementById('invReceiveDate').valueAsDate = new Date();
+            if (document.getElementById('invTanggalSubmit')) document.getElementById('invTanggalSubmit').valueAsDate = new Date();
+            fetchDataFromSheet();
+        };
+
+        function fetchDataFromSheet() {
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run
+                    .withSuccessHandler(function (response) {
+                        if (response.status === "success") {
+                            appData.budget = response.masterBudget || [];
+                            appData.subwork = response.masterSubwork || [];
+                            appData.realisasi = response.realisasi || [];
+                            appData.invoices = response.invoices || [];
+
+                            if (appData.budget.length === 0) {
+                                console.warn("⚠️ Data MasterBudget kosong atau tidak terbaca.");
+                            }
+
+                            buildLookupMaps();
+                            renderAllData();
+                            buildPicDropdowns();  // Isi dropdown PIC setelah data tersedia
+                            hideLoader();
+                        } else {
+                            hideLoader();
+                            console.error("Backend Error:", response.message);
+                            showModernAlert("Gagal Memuat Data", response.message, "error");
+                        }
+                    })
+                    .withFailureHandler(function (error) {
+                        hideLoader();
+                        console.error("Connection Error:", error);
+                        showModernAlert("Koneksi Terputus", "Gagal terhubung ke Google Script. Pastikan Anda memiliki akses.", "error");
+                    })
+                    .getInitialData();
+            } else {
+                simulateLocalData();
+                buildLookupMaps();
+                renderAllData();
+                setTimeout(hideLoader, 1500);
+            }
+        }
+
+        function hideLoader() {
+            const loader = document.getElementById('loader');
+            loader.style.opacity = '0';
+            setTimeout(() => { loader.style.display = 'none'; }, 500);
+        }
+
+        // Membuat peta pencarian agar mempercepat pengambilan Narasi
+        function buildLookupMaps() {
+            workTitleToNaration = {};
+            appData.subwork.forEach(sw => {
+                workTitleToNaration[sw.workTitle] = sw.naration;
+            });
+        }
+
+        function renderAllData() {
+            renderDropdown();
+            renderDashboardAndTable();
+            renderInvoiceTable();
+            renderHistoryTable(); // Pastikan history juga di-render
+            buildPicDropdowns();
+            buildWorkTitleDropdowns(); // <-- Memicu susunan otomatis dropdown Work Title baru
+        }
+
+        // MENGISI DROPDOWN INPUT (Hanya Work Title)
+        function renderDropdown() {
+            let select = document.getElementById('inputCoA');
+            let selectInv = document.getElementById('invCoA');
+            let html = '<option value="" disabled selected>-- Pilih Pekerjaan (Work Title) --</option>';
+
+            appData.subwork.forEach(sw => {
+                // value = WorkTitle ||| CoA ||| Naration
+                let value = sw.workTitle + "|||" + sw.coa + "|||" + sw.naration;
+                html += '<option value="' + value + '">' + sw.workTitle + '</option>';
+            });
+            if (select) select.innerHTML = html;
+            if (selectInv) selectInv.innerHTML = html;
+        }
+
+        // Fungsi yang dipanggil saat dropdown berubah (Auto-fill)
+        function updateNaration() {
+            const selectValue = document.getElementById('inputCoA').value;
+            if (!selectValue) return;
+            const parts = selectValue.split("|||");
+            const naration = parts[2] || "Lain-lain";
+            document.getElementById('inputNaration').value = naration;
+        }
+
+        function updateInvNaration() {
+            const selectValue = document.getElementById('invCoA').value;
+            if (!selectValue) return;
+            const parts = selectValue.split("|||");
+            const naration = parts[2] || "Lain-lain";
+            document.getElementById('invNaration').value = naration;
+
+            autoSetTargetDate();
+        }
+
+        // Fitur Smart Due Date: Menghitung target hari kerja (Sabtu/Minggu di-skip)
+        function autoSetTargetDate() {
+            // Prioritaskan Tanggal Submit (ke Finance), jika kosong pakai Receive Date
+            const tanggalStr = document.getElementById('invTanggalSubmit').value || document.getElementById('invReceiveDate').value;
+            const coaVal = document.getElementById('invCoA').value;
+
+            if (!tanggalStr || !coaVal) return;
+
+            const parts = coaVal.split("|||");
+            const workTitle = parts[0];
+
+            let daysToAdd = 30; // Default 30 hari kerja
+            const wtLower = workTitle.toLowerCase();
+            
+            if (wtLower.includes("akomodasi hotel") || wtLower.includes("tiket pesawat")) {
+                daysToAdd = 14;
+            }
+
+            let date = new Date(tanggalStr);
+            let added = 0;
+
+            while (added < daysToAdd) {
+                date.setDate(date.getDate() + 1);
+                // 0 = Minggu, 6 = Sabtu
+                if (date.getDay() !== 0 && date.getDay() !== 6) {
+                    added++;
+                }
+            }
+
+            // Set input target date
+            let finalDateStr = date.toISOString().substring(0, 10);
+            document.getElementById('invTarget').value = finalDateStr;
+        }
+
+        // Variabel untuk Chart.js agar bisa dihancurkan (destroy) saat re-render
+        let myLineChart = null;
+        let myPieChart = null;
+        let myBarChart = null;
+
+        // MENGHITUNG DAN MENAMPILKAN DASHBOARD & TABEL
+        function renderDashboardAndTable() {
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let totalBudget = 0;
+                let totalRealisasi = 0;
+                let totalTbk = 0; // Penggunaan Tbk (CoA = 0)
+
+                let narationMap = {}; // Untuk progress bar dan Pie Chart
+                let budgetPerCoA = {}; // Untuk Tabel
+                let monthlyTrend = {}; // Untuk Line Chart
+
+                // 1. Inisialisasi dari Master Budget
+                if (!appData.budget) appData.budget = [];
+                if (!appData.realisasi) appData.realisasi = [];
+                if (!appData.invoices) appData.invoices = [];
+                if (!appData.subwork) appData.subwork = [];
+
+                appData.budget.forEach(b => {
+                    totalBudget += b.budget;
+
+                    // Map untuk Progress Bar (berdasarkan Narasi)
+                    let narasiClean = b.naration || "Lain-lain";
+                    if (!narationMap[narasiClean]) {
+                        narationMap[narasiClean] = { budget: 0, realisasi: 0 };
+                    }
+                    narationMap[narasiClean].budget += b.budget;
+
+                    // Map untuk Tabel (berdasarkan CoA)
+                    if (!budgetPerCoA[b.account]) {
+                        budgetPerCoA[b.account] = { naration: narasiClean, budget: 0, realisasi: 0 };
+                    }
+                    budgetPerCoA[b.account].budget += b.budget;
+                });
+
+                // Gabungkan data realisasi reguler dan invoice untuk kalkulasi pemotongan budget
+                let allExpenses = [...appData.realisasi].map(r => ({ ...r, isInvoice: false }));
+
+                appData.invoices.forEach(inv => {
+                    // Semua tagihan (Lunas maupun Belum) tetap dianggap sebagai komitmen pengeluaran yang mengurangi budget
+                    allExpenses.push({
+                        tanggal: inv.tanggal,
+                        nominal: inv.nominal,
+                        terbayar: inv.terbayar || 0, // Bawa data terbayar
+                        isInvoice: true, // Penanda ini adalah tagihan
+                        coa: inv.coa,
+                        workTitle: inv.workTitle,
+                        naration: inv.naration
+                    });
+                });
+
+                // Proses Realisasi Pengeluaran & Invoice
+                allExpenses.forEach(r => {
+                    // Deteksi Tbk (Jika CoA adalah "0", " ", kosong, ATAU nama Work Title mengandung kata "tbk")
+                    let coaStr = String(r.coa || "").trim();
+                    let workTitleStr = String(r.workTitle || "").toLowerCase();
+                    let isTbk = (coaStr === "0" || coaStr === "" || workTitleStr.includes("tbk"));
+
+                    if (isTbk) {
+                        totalTbk += r.nominal;
+                    } else {
+                        totalRealisasi += r.nominal;
+
+                        // Rekap untuk Monthly Trend (Hanya Non-Tbk)
+                        if (r.tanggal) {
+                            let dateObj = new Date(r.tanggal);
+                            if (!isNaN(dateObj.getTime())) {
+                                let monthYear = dateObj.getFullYear() + "-" + String(dateObj.getMonth() + 1).padStart(2, '0');
+                                let monthName = dateObj.toLocaleString('id-ID', { month: 'short', year: 'numeric' });
+
+                                if (!monthlyTrend[monthYear]) {
+                                    monthlyTrend[monthYear] = { name: monthName, total: 0 };
+                                }
+                                monthlyTrend[monthYear].total += r.nominal;
+                            }
+                        }
+                    }
+
+                    // Cari narasi yang tepat (dari data realisasi atau lookup subwork)
+                    let narasi = r.naration || workTitleToNaration[r.workTitle] || "Lain-lain (Tbk/Luar Master)";
+
+                    // Tambahkan realisasi ke map Narasi untuk Progress Bar & Pie Chart
+                    if (!narationMap[narasi]) {
+                        narationMap[narasi] = { budget: 0, realisasi: 0, realisasiOnly: 0, outstandingOnly: 0 };
+                    }
+                    narationMap[narasi].realisasi += r.nominal; // Total gabungan
+                    
+                    // Pisahkan nilai riil yang sudah dibayar dan yang outstanding
+                    let realisasiVal = r.isInvoice ? (r.terbayar || 0) : r.nominal;
+                    let outstandingVal = r.isInvoice ? (r.nominal - (r.terbayar || 0)) : 0;
+                    
+                    narationMap[narasi].realisasiOnly = (narationMap[narasi].realisasiOnly || 0) + realisasiVal;
+                    narationMap[narasi].outstandingOnly = (narationMap[narasi].outstandingOnly || 0) + outstandingVal;
+
+                    // Tambahkan realisasi ke map CoA untuk Tabel Laporan
+                    // UNTUK TBK: Gunakan Narasi sebagai Key agar tidak tergabung (merged) jika CoA-nya sama-sama 0
+                    let tableKey = isTbk ? ("TBK_" + narasi) : coaStr;
+
+                    if (!budgetPerCoA[tableKey]) {
+                        budgetPerCoA[tableKey] = { coa: isTbk ? "0" : coaStr, naration: narasi, budget: 0, realisasi: 0, isTbk: isTbk };
+                    }
+                    budgetPerCoA[tableKey].realisasi += r.nominal;
+                });
+
+                // 3. Kalkulasi Persentase Dashboard Utama
+                const sisaBudget = totalBudget - totalRealisasi; // Tbk tidak memotong sisa budget utama (karena CoA 0)
+                const persenTerpakai = totalBudget > 0 ? (totalRealisasi / totalBudget * 100).toFixed(1) : 0;
+                const persenSisa = totalBudget > 0 ? (100 - persenTerpakai).toFixed(1) : 100;
+
+                // Kalkulasi Outstanding Invoice (Hanya yang belum lunas)
+                let totalOutstanding = 0;
+                let countOutstanding = 0;
+                appData.invoices.forEach(inv => {
+                    if (inv.status !== "Lunas") {
+                        totalOutstanding += (inv.nominal - (inv.terbayar || 0));
+                        countOutstanding++;
+                    }
+                });
+
+                document.getElementById('dash-total-budget').innerText = formatRupiahText(totalBudget);
+                document.getElementById('dash-total-realisasi').innerText = formatRupiahText(totalRealisasi);
+                document.getElementById('dash-sisa-budget').innerText = formatRupiahText(sisaBudget);
+                document.getElementById('dash-total-tbk').innerText = formatRupiahText(totalTbk);
+                document.getElementById('dash-total-outstanding').innerText = formatRupiahText(totalOutstanding);
+
+                document.getElementById('dash-realisasi-pct').innerHTML = '<i class="fas fa-arrow-up"></i> ' + persenTerpakai + '% Terpakai (Non-Tbk)';
+                document.getElementById('dash-sisa-pct').innerHTML = '<i class="fas fa-shield-alt"></i> ' + persenSisa + '% Sisa';
+                document.getElementById('dash-outstanding-count').innerHTML = '<i class="fas fa-clock"></i> ' + countOutstanding + ' Tagihan Menunggu';
+
+                // 4. Render Charts (Line & Pie)
+                let sortedMonths = Object.keys(monthlyTrend).sort();
+                let labelsLine = sortedMonths.map(k => monthlyTrend[k].name);
+                let dataLine = sortedMonths.map(k => monthlyTrend[k].total);
+
+                let labelsPie = [];
+                let dataPie = [];
+                for (let narasi in narationMap) {
+                    if (narationMap[narasi].realisasi > 0) {
+                        // Truncate long labels for cleaner legend
+                        let cleanLabel = narasi.length > 25 ? narasi.substring(0, 25) + "..." : narasi;
+                        labelsPie.push(cleanLabel);
+                        dataPie.push(narationMap[narasi].realisasi);
+                    }
+                }
+                // Persiapkan data untuk Bar Chart
+                let labelsBar = [];
+                let dataBudgetBar = [];
+                let dataRealisasiBar = [];
+                let dataOutstandingBar = [];
+                for (let narasi in narationMap) {
+                    if (narationMap[narasi].budget > 0 || narationMap[narasi].realisasi > 0) {
+                        let cleanLabel = narasi.length > 20 ? narasi.substring(0, 20) + "..." : narasi;
+                        labelsBar.push(cleanLabel);
+                        dataBudgetBar.push(narationMap[narasi].budget);
+                        dataRealisasiBar.push(narationMap[narasi].realisasiOnly || 0);
+                        dataOutstandingBar.push(narationMap[narasi].outstandingOnly || 0);
+                    }
+                }
+
+                renderCharts(labelsLine, dataLine, labelsPie, dataPie, labelsBar, dataBudgetBar, dataRealisasiBar, dataOutstandingBar);
+
+                // 5. Kalkulasi Rata-rata Bulanan untuk AI
+                let trendValues = Object.values(monthlyTrend);
+                let avgMonthly = trendValues.length > 0 ? (trendValues.reduce((a, b) => a + b, 0) / trendValues.length) : 0;
+
+                // 6. Persiapkan data untuk AI & Tabel (Definisikan SEBELUM dipanggil)
+                let pendingInvoices = appData.invoices.filter(inv => inv.status !== "Lunas");
+
+                // 7. Smart AI Intelligence (Budget + Invoicing)
+                // startAIIntelligence(sisaBudget, avgMonthly, pendingInvoices); // Dimatikan sementara
+
+                // 8. Render Dashboard Vendor Cards (Akumulasi per Kontraktor)
+                let vendorMap = {};
+                appData.invoices.forEach(inv => {
+                    let sisa = inv.nominal - (inv.terbayar || 0);
+                    // Hanya kumpulkan data vendor yang masih memiliki sisa tagihan (outstanding)
+                    if (sisa > 0 && inv.status !== "Lunas") {
+                        let nama = inv.kontraktor || "Tanpa Nama";
+                        if (!vendorMap[nama]) {
+                            vendorMap[nama] = { totalTagihan: 0, totalTerbayar: 0, totalSisa: 0, count: 0 };
+                        }
+                        vendorMap[nama].totalTagihan += inv.nominal;
+                        vendorMap[nama].totalTerbayar += (inv.terbayar || 0);
+                        vendorMap[nama].totalSisa += sisa;
+                        vendorMap[nama].count += 1; // Menghitung ada berapa lembar invoice
+                    }
+                });
+
+                let vendorArr = Object.keys(vendorMap).map(k => ({ nama: k, ...vendorMap[k] }));
+                // Urutkan berdasarkan sisa hutang terbesar ke terkecil
+                vendorArr.sort((a, b) => b.totalSisa - a.totalSisa);
+
+                let vendorHtml = '';
+                if (vendorArr.length === 0) {
+                    vendorHtml = `<div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: var(--text-muted); font-size: 1.1rem;"><i class="fas fa-check-circle" style="color: var(--primary-green); font-size: 2.5rem; margin-bottom: 12px; display: block;"></i>Semua tagihan vendor sudah lunas 🎉</div>`;
+                } else {
+                    vendorArr.forEach(v => {
+                        vendorHtml += `
+                        <div class="vendor-card">
+                            <div class="vendor-header">
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%;" title="${v.nama}">${v.nama}</span>
+                                <span class="badge warning" style="font-size: 0.75rem; background: #fef3c7; color: #d97706;">${v.count} Inv</span>
+                            </div>
+                            <div class="vendor-stat">
+                                <span style="color: var(--text-muted);">Total Tagihan</span>
+                                <span class="currency" style="color: var(--primary-navy);">${formatRupiahText(v.totalTagihan)}</span>
+                            </div>
+                            <div class="vendor-stat">
+                                <span style="color: var(--text-muted);">Telah Dibayar</span>
+                                <span class="currency" style="color: var(--primary-green);">${formatRupiahText(v.totalTerbayar)}</span>
+                            </div>
+                            <div class="vendor-stat sisa">
+                                <span>Sisa Outstanding</span>
+                                <span class="currency">${formatRupiahText(v.totalSisa)}</span>
+                            </div>
+                        </div>`;
+                    });
+                }
+                
+                const vendorContainer = document.getElementById('dashboard-vendor-cards');
+                if (vendorContainer) vendorContainer.innerHTML = vendorHtml;
+
+                // 5. Render Tabel Laporan
+                let tableHtml = '';
+                Object.keys(budgetPerCoA).forEach(coa => {
+                    let item = budgetPerCoA[coa];
+                    let sisa = item.budget - item.realisasi;
+                    let pctSisa = item.budget > 0 ? (sisa / item.budget * 100) : 0;
+
+                    let badge = '<span class="badge success">Aman</span>';
+                    let sisaColor = 'var(--primary-green)';
+
+                    if (coa === "0" || coa === 0) {
+                        badge = '<span class="badge info">Khusus Tbk</span>';
+                        sisaColor = '#b45309'; // Warna oranye gelap
+                    } else if (item.budget === 0 && item.realisasi > 0) {
+                        badge = '<span class="badge danger">Overbudget</span>';
+                        sisaColor = '#dc2626';
+                    } else if (pctSisa < 10) {
+                        badge = '<span class="badge danger">Kritis</span>';
+                        sisaColor = '#dc2626';
+                    } else if (pctSisa < 30) {
+                        badge = '<span class="badge warning">Warning</span>';
+                        sisaColor = '#d97706';
+                    }
+
+                    tableHtml += `
+                    <tr>
+                        <td>
+                            <strong>${item.naration}</strong>
+                        </td>
+                        <td>${coa}</td>
+                        <td class="text-right currency">${formatRupiahText(item.budget)}</td>
+                        <td class="text-right currency">${formatRupiahText(item.realisasi)}</td>
+                        <td class="text-right currency" style="color: ${sisaColor}">${formatRupiahText(sisa)}</td>
+                        <td>${badge}</td>
+                    </tr>
+                `;
+                });
+                document.getElementById('table-body').innerHTML = tableHtml;
+            } catch (e) {
+                console.error("Render Error:", e);
+            }
+        }
+
+        // FUNGSI RENDER CHART.JS
+        function renderCharts(labelsLine, dataLine, labelsPie, dataPie, labelsBar, dataBudgetBar, dataRealisasiBar, dataOutstandingBar) {
+            if (myLineChart) myLineChart.destroy();
+            if (myPieChart) myPieChart.destroy();
+            if (myBarChart) myBarChart.destroy();
+
+            // Line Chart
+            const ctxLine = document.getElementById('lineChart').getContext('2d');
+            myLineChart = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: labelsLine,
+                    datasets: [{
+                        label: 'Total Pengeluaran',
+                        data: dataLine,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#10b981',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: v => 'Rp ' + formatSingkat(v) } }
+                    }
+                }
+            });
+
+            // Doughnut / Pie Chart - REDESIGN MODERN
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            myPieChart = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: labelsPie,
+                    datasets: [{
+                        data: dataPie,
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f43f5e'],
+                        borderWidth: 0,
+                        hoverOffset: 8,
+                        borderRadius: 6, // Ujung bar melengkung
+                        spacing: 4 // Jarak antar potongan
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%', // Cincin lebih tipis dan elegan
+                    plugins: {
+                        legend: {
+                            display: false // Menyembunyikan legend agar chart tampil maksimal
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            padding: 12,
+                            titleFont: { family: 'Outfit', size: 13 },
+                            bodyFont: { family: 'Inter', size: 12 },
+                            cornerRadius: 8
+                        }
+                    }
+                }
+            });
+
+            // Bar Chart (Budget vs Realisasi)
+            const ctxBar = document.getElementById('barChart');
+            if (ctxBar) {
+                myBarChart = new Chart(ctxBar.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: labelsBar,
+                        datasets: [
+                            {
+                                label: 'Budget Awal',
+                                data: dataBudgetBar,
+                                backgroundColor: '#93c5fd', // Biru muda
+                                borderRadius: 4,
+                            },
+                            {
+                                label: 'Realisasi (Terbayar)',
+                                data: dataRealisasiBar,
+                                backgroundColor: '#10b981', // Hijau
+                                borderRadius: 4,
+                            },
+                            {
+                                label: 'Outstanding Invoice',
+                                data: dataOutstandingBar,
+                                backgroundColor: '#fbbf24', // Kuning/Amber
+                                borderRadius: 4,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y', // Buat jadi horizontal bar chart
+                        animation: {
+                            duration: 1800,
+                            easing: 'easeInOutQuart'
+                        },
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return context.dataset.label + ': Rp ' + formatSingkat(context.raw);
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function (value) { return 'Rp ' + formatSingkat(value); }
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    color: function(ctx) {
+                                        let lbl = labelsBar[ctx.index] || '';
+                                        return lbl.toLowerCase().includes('tbk') ? '#dc2626' : '#64748b'; // Merah jika ada kata Tbk
+                                    },
+                                    font: function(ctx) {
+                                        let lbl = labelsBar[ctx.index] || '';
+                                        return {
+                                            family: 'Inter',
+                                            weight: lbl.toLowerCase().includes('tbk') ? 'bold' : '600'
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // NEW: AI INTELLIGENCE SYSTEM
+        let aiInterval = null;
+        function startAIIntelligence(sisaBudget, avgMonthly, pendingInvoices) {
+            const container = document.getElementById('smart-alert-container');
+            const textEl = document.getElementById('smart-alert-text');
+            const iconEl = container.querySelector('.fa-robot');
+            const cardEl = container.querySelector('.stat-card');
+
+            if (!sisaBudget && pendingInvoices.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            let today = new Date();
+            let overdueInvoices = pendingInvoices.filter(inv => {
+                let target = new Date(inv.targetDate);
+                return !isNaN(target.getTime()) && target < today;
+            });
+
+            let messages = [];
+
+            // Message 1: Budget Projection
+            let monthsLeft = avgMonthly > 0 ? (sisaBudget / avgMonthly) : 0;
+            if (avgMonthly <= 0) {
+                messages.push({
+                    type: 'info',
+                    text: `<strong>INFO:</strong> Belum ada data tren pengeluaran yang cukup untuk sistem AI membuat proyeksi bulanan.`
+                });
+            } else if (monthsLeft <= 0.2) {
+                messages.push({
+                    type: 'danger',
+                    text: `<strong>KRITIS:</strong> Sisa anggaran sangat menipis dan berisiko habis dalam bulan ini! Segera hentikan pengeluaran non-prioritas.`
+                });
+            } else if (monthsLeft < 3) {
+                messages.push({
+                    type: 'warning',
+                    text: `<strong>WASPADA:</strong> Jika laju pengeluaran tetap, anggaran diproyeksikan habis dalam ${monthsLeft.toFixed(1)} bulan. Mohon evaluasi rencana anggaran Anda.`
+                });
+            } else {
+                messages.push({
+                    type: 'success',
+                    text: `<strong>AMAN:</strong> Berdasarkan tren pengeluaran saat ini, sisa anggaran Anda aman untuk sekitar ${Math.floor(monthsLeft)} bulan ke depan.`
+                });
+            }
+
+            // Message 2: Invoicing Overdue
+            if (overdueInvoices.length > 0) {
+                let totalOverdue = overdueInvoices.reduce((sum, inv) => sum + (inv.nominal - (inv.terbayar || 0)), 0);
+                messages.push({
+                    type: 'warning',
+                    text: `<strong>OVERDUE:</strong> Terdapat ${overdueInvoices.length} tagihan senilai ${formatRupiahText(totalOverdue)} yang melewati jatuh tempo! Segera tindak lanjuti ke tim Finance.`
+                });
+            }
+
+            // Message 3: Actionable Advice
+            if (pendingInvoices.length > 0) {
+                messages.push({
+                    type: 'info',
+                    text: `<strong>TIPS:</strong> Gunakan tombol <i class="fas fa-envelope"></i> pada tabel di bawah untuk mengirim email follow-up otomatis kepada PIC terkait.`
+                });
+            }
+
+            let msgIndex = 0;
+            const updateAI = () => {
+                let msg = messages[msgIndex];
+                textEl.innerHTML = msg.text;
+
+                // Color mapping
+                const colors = {
+                    danger: { bg: '#fef2f2', border: '#fecaca', text: '#991b1b', icon: '#dc2626' },
+                    warning: { bg: '#fffbeb', border: '#fde68a', text: '#92400e', icon: '#f59e0b' },
+                    success: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', icon: '#10b981' },
+                    info: { bg: '#eff6ff', border: '#bfdbfe', text: '#1e40af', icon: '#3b82f6' }
+                };
+
+                let theme = colors[msg.type];
+                cardEl.style.backgroundColor = theme.bg;
+                cardEl.style.borderColor = theme.border;
+                textEl.style.color = theme.text;
+                iconEl.style.color = theme.icon;
+
+                msgIndex = (msgIndex + 1) % messages.length;
+            };
+
+            if (aiInterval) clearInterval(aiInterval);
+            updateAI();
+            aiInterval = setInterval(updateAI, 6000); // Ganti pesan tiap 6 detik
+        }
+
+        // ==========================================
+        // FUNGSI PENDUKUNG FORM & UTILITIES
+        // ==========================================
+
+        function submitInvoice(event) {
+            event.preventDefault();
+            const btn = document.getElementById('btnSubmitInv');
+            const originalText = btn.innerHTML;
+
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+            btn.style.opacity = '0.8';
+            btn.disabled = true;
+
+            const coaValue = document.getElementById('inputCoA').value;
+            const parts = coaValue.split("|||");
+
+            const data = {
+                tanggalSubmit: document.getElementById('invTanggalSubmit').value,
+                invoiceDate: document.getElementById('invDate').value,
+                receiveDate: document.getElementById('invReceiveDate').value,
+                targetDate: document.getElementById('invTarget').value,
+                workTitle: parts[0],
+                coa: parts[1],
+                narasi: parts[2],
+                noInvoice: document.getElementById('invNoInvoice').value,
+                kontraktor: document.getElementById('invKontraktor').value,
+                pic: document.getElementById('invPIC').value,
+                divisi: document.getElementById('invDivisi').value,
+                cpAcct: document.getElementById('invCPAcct').value,
+                cpTreasury: document.getElementById('invCPTreasury').value,
+                nominal: document.getElementById('invNominal').value,
+                catatan: document.getElementById('invCatatan').value,
+                vatStatus: document.querySelector('input[name="invVat"]:checked').value,
+                payType: document.getElementById('invPayType').value
+            };
+
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run
+                    .withSuccessHandler(function (response) {
+                        btn.innerHTML = originalText;
+                        btn.style.opacity = '1';
+                        btn.disabled = false;
+
+                        if (response === "Sukses") {
+                            document.getElementById('realisasiForm').reset();
+                            document.getElementById('inputDate').valueAsDate = new Date();
+                            document.getElementById('inputNaration').value = ""; // Clear narasi
+                            showToast();
+
+                            document.getElementById('loader').style.display = 'flex';
+                            setTimeout(() => { document.getElementById('loader').style.opacity = '1'; }, 10);
+                            fetchDataFromSheet();
+                        } else {
+                            showModernAlert("Gagal Menyimpan", response, "error");
+                        }
+                    })
+                    .withFailureHandler(function (error) {
+                        btn.innerHTML = originalText;
+                        btn.style.opacity = '1';
+                        btn.disabled = false;
+                        showModernAlert("Kesalahan Server", "Gagal koneksi server: " + error, "error");
+                    })
+                    .simpanData(data);
+            } else {
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.opacity = '1';
+                    btn.disabled = false;
+                    document.getElementById('realisasiForm').reset();
+                    document.getElementById('inputDate').valueAsDate = new Date();
+                    document.getElementById('inputNaration').value = "";
+                    showToast();
+                }, 1000);
+            }
+        }
+
+        function submitInvoice(event) {
+    event.preventDefault();
+    const btn = document.getElementById('btnSubmitInv');
+    const originalText = btn.innerHTML;
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    btn.disabled = true;
+
+    const coaValue = document.getElementById('invCoA').value;
+    const parts = coaValue.split("|||");
+
+    const data = {
+        workTitle: parts[0],
+        coa: parts[1],
+        narasi: parts[2],
+        tanggalSubmit: document.getElementById('invTanggalSubmit').value,
+        invoiceDate: document.getElementById('invDate').value,
+        receiveDate: document.getElementById('invReceiveDate').value,
+        targetDate: document.getElementById('invTarget').value,
+        noInvoice: document.getElementById('invNoInvoice').value,
+        kontraktor: document.getElementById('invKontraktor').value,
+        pic: document.getElementById('invPIC').value,
+        divisi: document.getElementById('invDivisi').value,
+        cpAcct: document.getElementById('invCPAcct').value,
+        cpTreasury: document.getElementById('invCPTreasury').value,
+        nominal: document.getElementById('invNominal').value,
+        catatan: document.getElementById('invCatatan').value,
+        vatStatus: document.querySelector('input[name="invVat"]:checked').value,
+        payType: document.getElementById('invPayType').value
+    };
+
+    google.script.run
+        .withSuccessHandler(function(res) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            if (res === "Sukses") {
+                showModernAlert("Berhasil", "Data Invoice berhasil disimpan!", "success");
+                document.getElementById('invoiceForm').reset();
+                fetchDataFromSheet(); // Refresh data
+            } else {
+                showModernAlert("Gagal", res, "error");
+            }
+        })
+        .simpanInvoice(data);
+}
+
+        function formatRupiahText(angka) {
+            return 'Rp ' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        function formatSingkat(angka) {
+            if (angka >= 1000000000) return (angka / 1000000000).toFixed(1) + 'M';
+            if (angka >= 1000000) return (angka / 1000000).toFixed(1) + 'Jt';
+            if (angka >= 1000) return (angka / 1000).toFixed(1) + 'Rb';
+            return angka;
+        }
+
+        function formatRupiah(input) {
+            let value = input.value.replace(/[^,\d]/g, '').toString();
+            let split = value.split(',');
+            let sisa = split[0].length % 3;
+            let rupiah = split[0].substr(0, sisa);
+            let ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+            if (ribuan) {
+                let separator = sisa ? '.' : '';
+                rupiah += separator + ribuan.join('.');
+            }
+            input.value = rupiah;
+        }
+
+        function switchTab(tabId, element) {
+            // Reset semua nav item dan view
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            // Sembunyikan semua view dengan style langsung (agar override inline style)
+            document.querySelectorAll('.view-container').forEach(el => {
+                el.classList.remove('active');
+                el.style.display = 'none';
+            });
+
+            // Tampilkan view yang aktif
+            const activeView = document.getElementById('view-' + tabId);
+            activeView.classList.add('active');
+            activeView.style.display = 'block';
+
+            const titles = {
+                'dashboard': 'Dashboard',
+                'laporan': 'Laporan Detail Budget',
+                'invoice-input': 'Input Data Pembayaran / Invoice',
+                'invoice-track': 'Monitoring & Tracking Invoice',
+                'payment-history': 'History Pembayaran'
+            };
+            document.getElementById('page-title').innerText = titles[tabId] || tabId;
+
+            // Reset filter saat pindah ke Monitoring Invoice
+            if (tabId === 'invoice-track') {
+                const searchEl = document.getElementById('search-kontraktor');
+                if (searchEl) { searchEl.value = ""; }
+                const picEl = document.getElementById('filter-pic-track');
+                if (picEl) { picEl.value = ""; }
+                const wtEl = document.getElementById('filter-worktitle-track');
+                if (wtEl) { wtEl.value = ""; } // <-- Ikut reset dropdown Work Title
+                renderInvoiceTable();
+            }
+
+            if (tabId === 'payment-history') {
+                renderHistoryTable();
+            }
+        }
+
+        // ==========================================
+        // FITUR TRACKING INVOICE (SMART MONITOR)
+        // ==========================================
+        // Bangun dropdown PIC dari data invoice (dipakai di kedua menu)
+        function buildPicDropdowns() {
+            const invoices = appData.invoices || [];
+            const pics = [...new Set(invoices.map(inv => inv.pic).filter(Boolean))].sort();
+
+            // Ukur lebar teks menggunakan hidden DOM span
+            const allLabels = ['\u2014 Semua PIC \u2014', ...pics];
+            const longestLabel = allLabels.reduce((a, b) => a.length > b.length ? a : b, '');
+
+            const ruler = document.createElement('span');
+            ruler.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:500 14px Inter,sans-serif;padding:0 40px 0 14px;pointer-events:none;';
+            ruler.textContent = longestLabel;
+            document.body.appendChild(ruler);
+            const measuredW = ruler.offsetWidth;
+            document.body.removeChild(ruler);
+
+            // Clamp antara 200px dan 500px
+            const finalW = Math.max(200, Math.min(measuredW, 500));
+
+            ['filter-pic-track', 'filter-pic-history'].forEach(function (id) {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const current = sel.value;
+                sel.innerHTML = '<option value="">\u2014 Semua PIC \u2014</option>';
+                pics.forEach(function (p) {
+                    const opt = document.createElement('option');
+                    opt.value = p;
+                    opt.textContent = p;
+                    if (p === current) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+                sel.style.width = finalW + 'px';
+                if (sel.parentElement) sel.parentElement.style.width = finalW + 'px';
+            });
+        }
+
+        // BARU: FUNGSI MENYUSUN DAFTAR WORK TITLE UNIK KE DROPDOWN FILTER
+        function buildWorkTitleDropdowns() {
+            const invoices = appData.invoices || [];
+            const titles = [...new Set(invoices.map(inv => inv.workTitle).filter(Boolean))].sort();
+            const sel = document.getElementById('filter-worktitle-track');
+            if (!sel) return;
+            const current = sel.value;
+            sel.innerHTML = '<option value="">— Semua Work Title —</option>';
+            titles.forEach(function (t) {
+                const opt = document.createElement('option');
+                opt.value = t;
+                opt.textContent = t;
+                if (t === current) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        }
+
+        function filterByContractor() {
+            const keyword = document.getElementById('search-kontraktor').value.toLowerCase();
+            const picFilter = (document.getElementById('filter-pic-track')?.value || '').toLowerCase();
+            const wtFilter = (document.getElementById('filter-worktitle-track')?.value || '').toLowerCase(); // <-- Saring nilai Work Title
+            const summaryDiv = document.getElementById('summary-kontraktor');
+
+            let filtered = appData.invoices.filter(inv => {
+                // Diperluas agar pencarian keyword juga mencakup pengecekan No. Invoice secara cerdas
+                const matchKontraktor = !keyword || inv.kontraktor.toLowerCase().includes(keyword) || inv.noInvoice.toLowerCase().includes(keyword);
+                const matchPic = !picFilter || (inv.pic || '').toLowerCase() === picFilter;
+                const matchWt = !wtFilter || (inv.workTitle || '').toLowerCase() === wtFilter; // <-- Kondisi filter Work Title
+                return matchKontraktor && matchPic && matchWt;
+            });
+
+            if (!keyword && !picFilter && !wtFilter) {
+                summaryDiv.style.display = 'none';
+                renderInvoiceTable();
+                return;
+            }
+
+            // Hitung Ringkasan
+            let tTagihan = 0;
+            let tDibayar = 0;
+            filtered.forEach(f => {
+                tTagihan += f.nominal;
+                tDibayar += (f.terbayar || 0);
+            });
+            let tSisa = tTagihan - tDibayar;
+
+            document.getElementById('sum-total').innerText = formatRupiahText(tTagihan);
+            document.getElementById('sum-dibayar').innerText = formatRupiahText(tDibayar);
+            document.getElementById('sum-sisa').innerText = formatRupiahText(tSisa);
+            summaryDiv.style.display = 'flex';
+
+            renderInvoiceTable(filtered.filter(inv => keyword || picFilter || wtFilter ? true : inv.status !== 'Lunas'));
+        }
+
+        function renderInvoiceTable(customData = null) {
+            let html = '';
+            let today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            let displayData = customData || appData.invoices.filter(inv => inv.status !== "Lunas");
+            
+            // BARU: Override sorting di frontend berdasarkan kedekatan Target Date (Status Monitor)
+            displayData.sort((a, b) => {
+                let tA = new Date(a.targetDate).getTime();
+                let tB = new Date(b.targetDate).getTime();
+                let isNA = isNaN(tA);
+                let isNB = isNaN(tB);
+                
+                if (isNA && isNB) return 0;
+                if (isNA) return 1;   // Tanggal kosong/tidak valid digeser ke paling bawah tabel
+                if (isNB) return -1;
+                
+                return tA - tB;       // Mengurutkan dari Overdue -> Hari Ini -> Kritis -> Aman
+            });
+
+            displayData.forEach(inv => {
+                let target = new Date(inv.targetDate);
+                let diffDays = 0;
+                let badge = '';
+                let rowStyle = '';
+
+                if (isNaN(target.getTime())) {
+                    badge = '<span class="badge info">Belum Diba</span>';
+                } else {
+                    target.setHours(0, 0, 0, 0);
+                    diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+
+                    if (inv.status === "Lunas") {
+                        badge = '<span class="badge success"><i class="fas fa-check-double"></i> Lunas</span>';
+                    } else if (diffDays < 0) {
+                        badge = '<span class="badge dark-danger" style="display: inline-flex; flex-direction: column; align-items: center; line-height: 1.2; padding: 6px 12px; gap: 2px;"><span><i class="fas fa-skull"></i> OVERDUE</span><span style="font-size: 0.85em; font-weight: 500;">(' + Math.abs(diffDays) + ' Hari)</span></span>';
+                        rowStyle = 'background-color: #fef2f2;';
+                    } else if (diffDays === 0) {
+                        badge = '<span class="badge danger"><i class="fas fa-exclamation-triangle"></i> HARI INI</span>';
+                    } else if (diffDays <= 3) {
+                        badge = '<span class="badge warning" style="background-color: #fdba74; color: #9a3412; display: inline-flex; flex-direction: column; align-items: center; line-height: 1.2; padding: 6px 12px; gap: 2px;"><span>H-' + diffDays + '</span><span style="font-size: 0.85em; font-weight: 500;">(Kritis)</span></span>';
+                    } else {
+                        badge = '<span class="badge info">H-' + diffDays + '</span>';
+                    }
+                }
+
+                let targetDateDisplay = isNaN(target.getTime()) ? "Belum Diba" : String(inv.targetDate).substring(0, 10);
+                let terbayar = inv.terbayar || 0;
+                let sisa = inv.nominal - terbayar;
+                let persen = inv.nominal > 0 ? (terbayar / inv.nominal * 100) : 0;
+
+                let tglInvStr = inv.tanggal ? String(inv.tanggal).substring(0, 10) : "-";
+                let tgtInvStr = targetDateDisplay;
+                let catatanHtml = inv.catatan ? `<div style="margin-top: 6px; padding: 6px 10px; background: #fffbeb; border-left: 3px solid #f59e0b; font-size: 0.8rem; color: #b45309; border-radius: 4px;"><strong>Catatan:</strong> ${inv.catatan}</div>` : '';
+
+                let vatBadge = inv.vatStatus === 'VAT'
+                    ? '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:5px;font-size:0.72rem;font-weight:600;">VAT</span>'
+                    : (inv.vatStatus === 'NON VAT' ? '<span style="background:#fef9c3;color:#854d0e;padding:2px 7px;border-radius:5px;font-size:0.72rem;font-weight:600;">NON VAT</span>' : '');
+                let payBadge = inv.payType && inv.payType !== '-'
+                    ? `<span style="background:#f0fdf4;color:#166534;padding:2px 7px;border-radius:5px;font-size:0.72rem;font-weight:600;margin-left:3px;">${inv.payType}</span>`
+                    : '';
+
+                html += `<tr style="${rowStyle}">
+                    <td>
+                        <strong>${inv.kontraktor}</strong><br>
+                        <small style="color:var(--text-muted)">Inv: ${inv.noInvoice || '-'}</small><br>
+                        <small style="color:var(--text-muted)">Tgl: ${tglInvStr}</small><br>
+                        <div style="margin-top:4px;">${vatBadge}${payBadge}</div>
+                        ${catatanHtml}
+                    </td>
+                    <td>
+                        <strong>${inv.pic}</strong> <small style="color:var(--text-muted)">(${inv.divisi})</small>
+                    </td>
+                    <td><strong>${tgtInvStr}</strong></td>
+                    <td class="text-right">
+                        <div class="currency">${formatRupiahText(inv.nominal)}</div>
+                        <div style="font-size: 0.8rem; color: #0284c7; font-weight: 500;">Terbayar: ${formatRupiahText(terbayar)}</div>
+                        <div style="font-size: 0.8rem; color: #059669; font-weight: 600;">Sisa: ${formatRupiahText(sisa)}</div>
+                        <div class="pay-progress-bg" title="Lunas: ${persen.toFixed(1)}% (${formatRupiahText(terbayar)} dari ${formatRupiahText(inv.nominal)})">
+                            <div class="pay-progress-fill" style="width: ${persen}%"></div>
+                        </div>
+                    </td>
+                    <td>${badge}<br><small style="color: var(--text-muted)">${inv.status}</small></td>
+                    <td>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="openEditModal(${inv.id})" style="background:#0284c7; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:0.85rem;" title="Update Status"><i class="fas fa-edit"></i></button>
+                            <button onclick="generateFollowUpEmail(${inv.id})" style="background:#059669; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:0.85rem;" title="Follow Up via Email"><i class="fas fa-envelope"></i></button>
+                            <button onclick="openDeleteModal(${inv.id})" style="background:#dc2626; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:0.85rem;" title="Hapus Permanen"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            if (displayData.length === 0) {
+                html = '<tr><td colspan="6" style="text-align:center; padding:3rem; color:var(--text-muted);">Tidak ada data tagihan yang sesuai filter.</td></tr>';
+            }
+            document.getElementById('table-invoice').innerHTML = html;
+        }
+
+        // ==========================================
+        // FITUR HISTORY PEMBAYARAN
+        // ==========================================
+        function filterHistoryTable() {
+            const keyword = document.getElementById('search-history').value.toLowerCase();
+            const picFilter = (document.getElementById('filter-pic-history')?.value || '').toLowerCase();
+
+            let filtered = appData.invoices.filter(inv => {
+                const s = (inv.status || "").toLowerCase();
+                const isPaid = s.includes("lunas") || s.includes("sebagian") || (Number(inv.terbayar) > 0);
+                const matchKeyword = !keyword || inv.kontraktor.toLowerCase().includes(keyword) || inv.noInvoice.toLowerCase().includes(keyword);
+                const matchPic = !picFilter || (inv.pic || '').toLowerCase() === picFilter;
+                return isPaid && matchKeyword && matchPic;
+            });
+
+            renderHistoryTable(filtered);
+        }
+
+        function renderHistoryTable(dataInput = null) {
+            let data = dataInput || appData.invoices.filter(inv => {
+                const s = (inv.status || "").toLowerCase();
+                return s.includes("lunas") || s.includes("sebagian") || (Number(inv.terbayar) > 0);
+            });
+            let html = '';
+            let totalPaid = 0;
+            let cicilanCount = 0;
+
+            data.forEach(inv => {
+                totalPaid += (inv.terbayar || 0);
+                if (inv.status === "Dibayar Sebagian") cicilanCount++;
+
+                const s = (inv.status || "").toLowerCase();
+                let statusBadge = s.includes("lunas") ? '<span class="badge success">Lunas</span>' : '<span class="badge warning">Sebagian</span>';
+                let tglSubmitStr = inv.tanggal ? String(inv.tanggal).substring(0, 10) : "-";
+                let labelBayar = s.includes("lunas") ? "Lunas" : "Terbayarkan";
+
+                html += `<tr>
+                    <td><strong>${inv.kontraktor}</strong><br><small style="color:var(--text-muted)">Inv: ${inv.noInvoice || '-'}</small></td>
+                    <td><strong>${inv.pic}</strong><br><small style="color:var(--text-muted)">${inv.divisi}</small></td>
+                    <td>${tglSubmitStr}</td>
+                    <td class="text-right">
+                        <div class="currency">${formatRupiahText(inv.nominal)}</div>
+                        <div style="font-size: 0.8rem; color: #059669; font-weight: 600;">${labelBayar}: ${formatRupiahText(inv.terbayar || 0)}</div>
+                    </td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="openPaymentLogModal(${inv.id})" style="background:#6366f1; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;" title="Lihat History Cicilan"><i class="fas fa-history"></i></button>
+                            <button onclick="openDeleteModal(${inv.id})" style="background:#dc2626; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;" title="Hapus Permanen"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            document.getElementById('hist-count').innerText = data.length;
+            document.getElementById('hist-total').innerText = formatRupiahText(totalPaid);
+            document.getElementById('hist-cicilan').innerText = cicilanCount;
+            document.getElementById('table-history').innerHTML = html || '<tr><td colspan="6" style="text-align:center; padding:3rem; color:var(--text-muted);">Belum ada riwayat pembayaran.</td></tr>';
+        }
+
+        // ==========================================
+        // MODAL & PIN VERIFICATION
+        // ==========================================
+        function verifyPin(context) {
+            const pinInput = document.getElementById(context === 'track' ? 'pinInputTrack' : (context === 'history' ? 'pinInputHistory' : 'delete-pin'));
+            const btn = document.getElementById(context === 'track' ? 'btnPinTrack' : (context === 'history' ? 'btnPinHistory' : 'btnConfirmDelete'));
+            const pin = pinInput.value;
+
+            if (!pin) {
+                pinInput.classList.add('shake');
+                setTimeout(() => pinInput.classList.remove('shake'), 400);
+                return;
+            }
+
+            const originalBtnHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memverifikasi...';
+            btn.disabled = true;
+            pinInput.disabled = true;
+
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run.withSuccessHandler(function (isValid) {
+                    btn.innerHTML = originalBtnHtml;
+                    btn.disabled = false;
+                    pinInput.disabled = false;
+                    
+                    if (isValid) {
+                        if (context === 'track') {
+                            document.getElementById('lock-screen-track').style.display = 'none';
+                            document.getElementById('content-track').style.display = 'block';
+                        } else if (context === 'history') {
+                            document.getElementById('lock-screen-history').style.display = 'none';
+                            document.getElementById('content-history').style.display = 'block';
+                            renderHistoryTable();
+                        } else if (context === 'delete') {
+                            processDeleteConfirmed();
+                        }
+                    } else {
+                        pinInput.classList.add('shake');
+                        showModernAlert("Akses Ditolak", "PIN Salah! Silakan coba lagi.", "error");
+                        pinInput.value = "";
+                        setTimeout(() => pinInput.classList.remove('shake'), 400);
+                        pinInput.focus();
+                    }
+                }).verifyPinOnServer(pin);
+            } else {
+                // Simulasi Local (Demo)
+                setTimeout(() => {
+                    btn.innerHTML = originalBtnHtml;
+                    btn.disabled = false;
+                    pinInput.disabled = false;
+                    if (pin === "1234") {
+                        if (context === 'track') {
+                            document.getElementById('lock-screen-track').style.display = 'none';
+                            document.getElementById('content-track').style.display = 'block';
+                        } else if (context === 'history') {
+                            document.getElementById('lock-screen-history').style.display = 'none';
+                            document.getElementById('content-history').style.display = 'block';
+                            renderHistoryTable();
+                        } else if (context === 'delete') {
+                            processDeleteConfirmed();
+                        }
+                    } else {
+                        pinInput.classList.add('shake');
+                        showModernAlert("Akses Ditolak", "PIN Salah! (Demo: 1234)", "error");
+                        setTimeout(() => pinInput.classList.remove('shake'), 400);
+                    }
+                }, 800);
+            }
+        }
+
+        // --- Fitur Hapus ---
+        function processDelete() {
+            verifyPin('delete');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('modal-delete-invoice').classList.remove('active');
+            document.getElementById('delete-pin').value = "";
+        }
+
+        function processDeleteConfirmed() {
+            const id = document.getElementById('delete-row-id').value;
+            const inv = appData.invoices.find(i => i.id == id);
+            if (!inv) return;
+            
+            const btn = document.getElementById('btnConfirmDelete');
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghapus...';
+            btn.disabled = true;
+
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run.withSuccessHandler(function (res) {
+                    closeDeleteModal();
+                    btn.innerHTML = 'Hapus';
+                    btn.disabled = false;
+                    if (res && res.indexOf("SUCCESS") !== -1) {
+                        showModernAlert("Berhasil", "Data berhasil dihapus dari sistem.", "success");
+                        fetchDataFromSheet();
+                    } else {
+                        showModernAlert("Gagal", res, "error");
+                    }
+                }).deleteInvoice(inv.uid, inv.id);
+            } else {
+                setTimeout(() => {
+                    closeDeleteModal();
+                    btn.innerHTML = 'Hapus';
+                    btn.disabled = false;
+                    showModernAlert("Simulasi", "Data berhasil dihapus (Demo Mode).", "success");
+                }, 1000);
+            }
+        }
+
+        function openDeleteModal(id) {
+            document.getElementById('delete-row-id').value = id;
+            document.getElementById('modal-delete-invoice').classList.add('active');
+            document.getElementById('delete-pin').value = "";
+            setTimeout(() => document.getElementById('delete-pin').focus(), 300);
+        }
+
+        function openEditModal(id) {
+            const inv = appData.invoices.find(i => i.id == id);
+            if (!inv) return;
+
+            // Simpan UID ke input hidden, bukan row index
+            document.getElementById('modal-inv-id').value = inv.uid; 
+            document.getElementById('modal-kontraktor').innerText = inv.kontraktor;
+            document.getElementById('modal-no-invoice').innerText = inv.noInvoice || '-';
+            document.getElementById('modal-nominal').innerText = formatRupiahText(inv.nominal);
+            document.getElementById('modal-terbayar').innerText = formatRupiahText(inv.terbayar || 0);
+            
+            // Hitung sisa
+            const sisa = inv.nominal - (inv.terbayar || 0);
+            document.getElementById('modal-sisa').innerText = formatRupiahText(sisa);
+            
+            // Siapkan input nominal & simpan data sisa untuk Auto-fill
+            const inputNominal = document.getElementById('modal-tambah-bayar');
+            inputNominal.dataset.sisa = sisa; 
+            inputNominal.value = "";
+
+            document.getElementById('modal-target-date').value = inv.targetDate ? String(inv.targetDate).substring(0, 10) : "";
+            document.getElementById('modal-status').value = inv.status;
+            document.getElementById('modal-catatan').value = inv.catatan || "";
+
+            // RESET TOMBOL AGAR SELALU BISA DIKLIK SAAT DIBUKA KEMBALI
+            const btn = document.getElementById('btnSubmitUpdate');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = 'Update Sekarang';
+            }
+
+            document.getElementById('modal-update-invoice').classList.add('active');
+            onStatusChange(inv.status);
+        }
+
+        function closeEditModal() {
+            document.getElementById('modal-update-invoice').classList.remove('active');
+        }
+
+        function onStatusChange(val) {
+            const hint = document.getElementById('status-nominal-hint');
+            const inputNominal = document.getElementById('modal-tambah-bayar');
+
+            if (val === "Dibayar Sebagian" || val === "Lunas") {
+                hint.style.display = 'block';
+            } else {
+                hint.style.display = 'none';
+            }
+
+            // FITUR AUTO-FILL JIKA LUNAS DIPILIH
+            if (val === "Lunas") {
+                const sisaRaw = inputNominal.dataset.sisa || 0;
+                if (sisaRaw > 0) {
+                    inputNominal.value = formatRupiahText(sisaRaw).replace('Rp ', '');
+                }
+            } else if (val === "Belum Dibayar") {
+                inputNominal.value = "";
+            }
+
+            validateNominalField();
+        }
+
+        function validateNominalField() {
+            const status = document.getElementById('modal-status').value;
+            const nominal = document.getElementById('modal-tambah-bayar').value;
+            const msg = document.getElementById('nominal-required-msg');
+            const group = document.getElementById('nominal-input-group');
+
+            if ((status === "Dibayar Sebagian" || status === "Lunas") && !nominal) {
+                msg.style.display = 'block';
+                group.style.border = '1.5px solid #dc2626';
+                return false;
+            } else {
+                msg.style.display = 'none';
+                group.style.border = 'none';
+                return true;
+            }
+        }
+
+        function submitUpdateInvoice(event) {
+            if (event) event.preventDefault(); // Mengunci formulir agar tidak me-reload
+            
+            if (!validateNominalField()) {
+                showModernAlert("Input Tidak Lengkap", "Harap isi nominal pembayaran untuk status ini.", "error");
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitUpdate');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+            const id = document.getElementById('modal-inv-id').value;
+            const targetDate = document.getElementById('modal-target-date').value;
+            const status = document.getElementById('modal-status').value;
+            const catatan = document.getElementById('modal-catatan').value;
+            const rawBayar = document.getElementById('modal-tambah-bayar').value;
+            
+            // Bersihkan titik ribuan agar format angka murni
+            const cleanBayar = rawBayar.replace(/\./g, '').replace(/,/g, '.');
+            const data = {
+                uid: id, // Kirim UID
+                id: id,
+                targetDate: targetDate,
+                status: status,
+                catatan: catatan,
+                tambahBayar: cleanBayar
+            };
+
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run.withSuccessHandler(function (res) {
+                    // RESET TOMBOL SETELAH SELESAI PROSES
+                    btn.disabled = false;
+                    btn.innerHTML = 'Update Sekarang';
+
+                    if (res === "Sukses") {
+                        showModernAlert("Berhasil", "Update status berhasil disimpan.", "success");
+                        closeEditModal();
+                        fetchDataFromSheet();
+                    } else {
+                        showModernAlert("Gagal Update", res, "error");
+                    }
+                }).withFailureHandler(function (err) {
+                    showModernAlert("Koneksi Gagal", "Masalah jaringan atau server sibuk. Silakan coba lagi.", "error");
+                    btn.disabled = false;
+                    btn.innerHTML = 'Update Sekarang';
+                }).updateInvoiceDetails(data);
+            } else {
+                setTimeout(() => {
+                    showModernAlert("Simulasi", "Simulasi Berhasil!", "success");
+                    closeEditModal();
+                    btn.disabled = false;
+                    btn.innerHTML = 'Update Sekarang';
+                }, 1000);
+            }
+        }
+
+        function openPaymentLogModal(id) {
+            const inv = appData.invoices.find(i => i.id == id);
+            if (!inv) return;
+
+            document.getElementById('modal-log-info').innerHTML = `
+                <strong>Kontraktor:</strong> ${inv.kontraktor}<br>
+                <strong>No. Invoice:</strong> ${inv.noInvoice || '-'}<br>
+                <strong>Total Nilai:</strong> ${formatRupiahText(inv.nominal)}
+            `;
+
+            document.getElementById('modal-log-loading').style.display = 'block';
+            document.getElementById('modal-log-content').style.display = 'none';
+            document.getElementById('modal-log-empty').style.display = 'none';
+            document.getElementById('modal-payment-log').classList.add('active');
+
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run.withSuccessHandler(function (logs) {
+                    document.getElementById('modal-log-loading').style.display = 'none';
+                    if (logs && logs.length > 0) {
+                        let html = '';
+                        logs.forEach((log, index) => {
+                            html += `<tr>
+                                <td>${index + 1}</td>
+                                <td>${log.timestamp}</td>
+                                <td class="text-right" style="color: #059669; font-weight: 600;">${formatRupiahText(log.nominalBayar)}</td>
+                                <td class="text-right">${formatRupiahText(log.saldoSesudah)}</td>
+                                <td><span class="badge ${log.status === 'Lunas' ? 'success' : 'warning'}" style="font-size: 0.7rem;">${log.status}</span></td>
+                                <td><small>${log.catatan || '-'}</small></td>
+                            </tr>`;
+                        });
+                        document.getElementById('table-payment-log').innerHTML = html;
+                        document.getElementById('modal-log-content').style.display = 'block';
+                    } else {
+                        document.getElementById('modal-log-empty').style.display = 'block';
+                    }
+                }).getPaymentLog(inv.uid);
+            } else {
+                setTimeout(() => {
+                    document.getElementById('modal-log-loading').style.display = 'none';
+                    document.getElementById('modal-log-empty').style.display = 'block';
+                }, 800);
+            }
+        }
+
+        function closePaymentLogModal() {
+            document.getElementById('modal-payment-log').classList.remove('active');
+        }
+
+        function generateFollowUpEmail(id) {
+            const inv = appData.invoices.find(i => i.id == id);
+            if (!inv) return;
+
+            const sisa = inv.nominal - (inv.terbayar || 0);
+            const subject = encodeURIComponent(`Follow Up Pembayaran: ${inv.kontraktor} (Inv: ${inv.noInvoice || '-'})`);
+            const body = encodeURIComponent(`Halo Tim Finance,\n\nMohon bantuannya untuk update status pembayaran berikut:\n\nKontraktor: ${inv.kontraktor}\nNo. Invoice: ${inv.noInvoice || '-'}\nNominal Sisa: ${formatRupiahText(sisa)}\nTarget Pembayaran: ${inv.targetDate}\n\nTerima kasih.`);
+
+            window.open(`mailto:?subject=${subject}&body=${body}`);
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        function simulateLocalData() {
+            console.log("Running in Local Mode (Demo Only)");
+            appData.budget = [
+                { category: "Office", account: "61001", naration: "Stationery", budget: 5000000 },
+                { category: "Travel", account: "0", naration: "Tiket Pesawat EMP Tbk", budget: 0 }
+            ];
+            appData.subwork = [
+                { workTitle: "Stationery Karyawan", coa: "61001", naration: "Stationery" },
+                { workTitle: "Tiket Pesawat EMP Tbk", coa: "0", naration: "Tiket Pesawat EMP Tbk" }
+            ];
+            appData.realisasi = [
+                { tanggal: "2026-05-01", workTitle: "Stationery Karyawan", nominal: 1000000, coa: "61001", naration: "Stationery" }
+            ];
+            appData.invoices = [
+                { id: 1, kontraktor: "Vendor A", noInvoice: "INV-001", nominal: 2000000, terbayar: 0, status: "Belum Dibayar", pic: "Andi", divisi: "Finance", targetDate: "2026-05-20" },
+                { id: 2, kontraktor: "Vendor B", noInvoice: "INV-002", nominal: 5000000, terbayar: 5000000, status: "Lunas", pic: "Budi", divisi: "HR", targetDate: "2026-05-10" }
+            ];
+        }
+
+        function showModernAlert(title, message, type = 'success') {
+            const modal = document.getElementById('modal-alert');
+            const iconEl = document.getElementById('alert-icon');
+            const titleEl = document.getElementById('alert-title');
+            const messageEl = document.getElementById('alert-message');
+
+            titleEl.innerText = title;
+            messageEl.innerText = message;
+
+            if (type === 'success') {
+                iconEl.className = 'fas fa-check-circle';
+                iconEl.style.color = 'var(--primary-green)';
+                titleEl.style.color = 'var(--primary-green)';
+            } else if (type === 'error') {
+                iconEl.className = 'fas fa-times-circle';
+                iconEl.style.color = '#dc2626';
+                titleEl.style.color = '#dc2626';
+            } else {
+                iconEl.className = 'fas fa-info-circle';
+                iconEl.style.color = '#3b82f6';
+                titleEl.style.color = '#3b82f6';
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeAlert() {
+            document.getElementById('modal-alert').classList.remove('active');
+        }
+    </script>
+</body>
+
+</html>
